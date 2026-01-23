@@ -60,6 +60,7 @@ Excel format chosen for easier manual inspection and smaller file size. Translat
 - **Hosted on**: Streamlit Community Cloud
 - `qdrant_db/` is committed to Git (small, ~500KB) for deployment
 - Pin `altair>=5.0.0,<6.0.0` in requirements.txt for Python 3.13 compatibility
+- **Replit not viable**: sentence-transformers + PyTorch exceed 8GB image limit
 
 ## Key Design Decisions
 
