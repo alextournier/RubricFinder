@@ -1,0 +1,23 @@
+# Data processing
+pandas
+openpyxl
+
+# API
+fastapi
+uvicorn
+pydantic
+
+# Vector database & embeddings
+qdrant-client
+sentence-transformers
+
+# LLM
+anthropic
+
+# Frontend
+streamlit
+requests
+
+# Utilities
+python-dotenv
+tqdm
