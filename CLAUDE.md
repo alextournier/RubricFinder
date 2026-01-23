@@ -9,15 +9,15 @@ RubricFinder is a semantic search webapp for homeopathic rubrics. It extracts ru
 ## Architecture
 
 ```
-OOREP SQL dump → Extract rubrics → LLM translation → Embed in Qdrant → FastAPI → Web frontend
+OOREP SQL dump → Extract rubrics → LLM translation → Embed in Qdrant → Streamlit frontend
 ```
 
 Key components:
 - **Data extraction**: Parse `oorep.sql.gz` to extract rubrics (starting with Mind chapter)
 - **Translation pipeline**: LLM-agnostic interface for converting archaic → modern English
 - **Vector storage**: Qdrant (local persistent) with sentence-transformers embeddings (`all-MiniLM-L6-v2`)
-- **API**: FastAPI `/search` endpoint (GET and POST)
-- **Frontend**: Streamlit or simple HTML/JS
+- **Frontend**: Streamlit app (`frontend/app.py`) with direct embedder integration (no separate API needed)
+- **API**: FastAPI `/search` endpoint (optional, for programmatic access)
 
 ## Development Commands
 
@@ -35,7 +35,10 @@ python scripts/translate_rubrics.py 100
 python scripts/embed_rubrics.py
 python scripts/embed_rubrics.py --force  # re-embed all
 
-# Start API server
+# Start Streamlit frontend
+streamlit run frontend/app.py
+
+# Start API server (optional)
 uvicorn src.api:app --reload
 
 # Run tests
