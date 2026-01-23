@@ -65,6 +65,7 @@ Excel format chosen for easier manual inspection and smaller file size. Translat
 
 - Search results show rubrics only, no remedies (keep simple)
 - Embed the **translation** (not original) for better semantic matching
+- **Translation guideline (TODO)**: Translations must stick closely to original wording — only add understandability, never remove details. The original terminology is important.
 - LLM interface is pluggable (Anthropic or OpenAI)
 - Excel (.xlsx) for data files — easier to inspect, single file per chapter
 - 10 test sentences per rubric (paraphrases) for validating semantic search
