@@ -55,8 +55,9 @@ Excel format chosen for easier manual inspection and smaller file size. Translat
 
 ## Deployment
 
-- **Hosted on**: Streamlit Community Cloud (https://share.streamlit.io)
+- **Live app**: https://rubricfinder-cpze8qjbitcdhswgawhmpa.streamlit.app/
 - **Repository**: https://github.com/alextournier/RubricFinder
+- **Hosted on**: Streamlit Community Cloud
 - `qdrant_db/` is committed to Git (small, ~500KB) for deployment
 - Pin `altair>=5.0.0,<6.0.0` in requirements.txt for Python 3.13 compatibility
 
