@@ -21,3 +21,7 @@ requests
 # Utilities
 python-dotenv
 tqdm
+pandas
+qdrant-client
+sentence-transformers
+streamlit
