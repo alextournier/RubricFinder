@@ -53,6 +53,13 @@ pytest tests/
 
 Excel format chosen for easier manual inspection and smaller file size. Translation and test sentences are added as columns to the same file (no separate translation file).
 
+## Deployment
+
+- **Hosted on**: Streamlit Community Cloud (https://share.streamlit.io)
+- **Repository**: https://github.com/alextournier/RubricFinder
+- `qdrant_db/` is committed to Git (small, ~500KB) for deployment
+- Pin `altair>=5.0.0,<6.0.0` in requirements.txt for Python 3.13 compatibility
+
 ## Key Design Decisions
 
 - Search results show rubrics only, no remedies (keep simple)
@@ -60,7 +67,7 @@ Excel format chosen for easier manual inspection and smaller file size. Translat
 - LLM interface is pluggable (Anthropic or OpenAI)
 - Excel (.xlsx) for data files — easier to inspect, single file per chapter
 - 10 test sentences per rubric (paraphrases) for validating semantic search
-- Qdrant (local persistent storage in `qdrant_db/`), API, and frontend all run on Replit
+- Qdrant (local persistent storage in `qdrant_db/`)
 - Switched from ChromaDB to Qdrant due to Python 3.14 compatibility (onnxruntime unavailable)
 
 ## Mathpix API Usage
