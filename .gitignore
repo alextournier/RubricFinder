@@ -16,6 +16,7 @@ data/oorep.sql.gz
 data/*.json
 *.db
 chroma_db/
+qdrant_db/
 
 # IDE
 .idea/
@@ -26,6 +27,7 @@ chroma_db/
 # OS
 .DS_Store
 Thumbs.db
+~$*
 
 # Logs
 *.log
