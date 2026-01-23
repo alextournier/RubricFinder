@@ -4,8 +4,11 @@ import streamlit as st
 import sys
 from pathlib import Path
 
+# Project root (parent of frontend/)
+PROJECT_ROOT = Path(__file__).parent.parent
+
 # Add project root to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.embedder import RubricEmbedder
 
@@ -13,7 +16,7 @@ from src.embedder import RubricEmbedder
 @st.cache_resource
 def get_embedder():
     """Load embedder once, cached across reruns."""
-    return RubricEmbedder()
+    return RubricEmbedder(persist_dir=PROJECT_ROOT / "qdrant_db")
 
 
 st.set_page_config(page_title="RubricFinder", page_icon="🔍", layout="wide")
