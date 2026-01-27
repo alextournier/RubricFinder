@@ -25,9 +25,10 @@ def evaluate_search(excel_path: Path, verbose: bool = False, output_path: Path |
     """
     # Load data
     df = pd.read_excel(excel_path)
-    df = df[df["translation"].notna()].copy()
+    if "translation" in df.columns:
+        df = df[df["translation"].notna()].copy()
 
-    print(f"Loaded {len(df)} rubrics with translations")
+    print(f"Loaded {len(df)} rubrics")
 
     # Initialize embedder
     print("Initializing embedder...")
@@ -58,8 +59,9 @@ def evaluate_search(excel_path: Path, verbose: bool = False, output_path: Path |
         rubric_results = {
             "id": rubric_id,
             "path": rubric_path,
-            "translation": row["translation"],
         }
+        if "translation" in row:
+            rubric_results["translation"] = row["translation"]
 
         for test_col in test_cols:
             test_sentence = row.get(test_col)

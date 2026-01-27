@@ -45,6 +45,12 @@ uvicorn src.api:app --reload
 
 # Run tests
 pytest tests/
+
+# Generate test sentences for semantic search evaluation
+python scripts/generate_test_sentences.py
+
+# Evaluate semantic search quality
+python scripts/evaluate_search.py --excel ../tests/test_sentences.xlsx
 ```
 
 ## Data Files
@@ -72,7 +78,9 @@ Excel format chosen for easier manual inspection and smaller file size.
 - **Embeddings DB size**: Currently ~500KB for ~5,900 Mind rubrics. Full repertory (~74,600 rubrics) estimated ~130-150MB with MiniLM-384d — well under Streamlit's 1GB repo limit
 - LLM interface is pluggable (Anthropic or OpenAI)
 - Excel (.xlsx) for data files — easier to inspect, single file per chapter
-- 10 test sentences per rubric (paraphrases) for validating semantic search — stored separately in `tests/test_sentences.xlsx`
+- 10 test sentences per rubric (short paraphrases) for validating semantic search — stored in `tests/test_sentences.xlsx`
+- Test sentences should be SHORT (8-10 words max) and semantically close to the translation for best embedding match
+- Current evaluation metrics (120 rubrics, 1200 queries): Hit@1: 44%, Hit@5: 71%, Hit@10: 79%, MRR: 0.55
 - Qdrant (local persistent storage in `qdrant_db/`)
 - Switched from ChromaDB to Qdrant due to Python 3.14 compatibility (onnxruntime unavailable)
 
