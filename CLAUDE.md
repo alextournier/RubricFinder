@@ -28,8 +28,10 @@ pip install -r requirements.txt
 # Run extraction script
 python scripts/extract_rubrics.py
 
-# Run translation pipeline
+# Run translation pipeline (parallel by default, ~10x faster)
 python scripts/translate_rubrics.py 100
+python scripts/translate_rubrics.py 100 -c 20  # custom concurrency
+python scripts/translate_rubrics.py 100 --sync  # sequential mode
 
 # Embed translations into vector database
 python scripts/embed_rubrics.py
