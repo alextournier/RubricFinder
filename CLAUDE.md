@@ -13,7 +13,7 @@ OOREP SQL dump → Extract rubrics → LLM translation → Embed in Qdrant → S
 ```
 
 Key components:
-- **Data extraction**: Parse `oorep.sql.gz` to extract rubrics (starting with Mind chapter)
+- **Data extraction**: Parse `oorep.sql.gz` to extract rubrics and remedy counts (starting with Mind chapter)
 - **Translation pipeline**: LLM-agnostic interface for converting archaic → modern English
 - **Vector storage**: Qdrant (local persistent) with sentence-transformers embeddings (`all-MiniLM-L6-v2`)
 - **Frontend**: Streamlit app (`frontend/app.py`) with direct embedder integration (no separate API needed)
@@ -49,9 +49,10 @@ pytest tests/
 
 - `data/oorep.sql.gz` - Source PostgreSQL dump from OOREP
 - `data/rubrics.xlsx` - All chapters extracted (reference)
-- `data/mind_rubrics.xlsx` - Mind chapter with columns: id, path, text, translation, test_1..test_10
+- `data/mind_rubrics.xlsx` - Mind chapter with columns: id, path, chapter, remedy_count, translation
+- `tests/test_sentences.xlsx` - Test sentences for semantic search validation (120 rubrics × 10 sentences each)
 
-Excel format chosen for easier manual inspection and smaller file size. Translation and test sentences are added as columns to the same file (no separate translation file).
+Excel format chosen for easier manual inspection and smaller file size.
 
 ## Deployment
 
@@ -64,14 +65,16 @@ Excel format chosen for easier manual inspection and smaller file size. Translat
 
 ## Key Design Decisions
 
-- Search results show rubrics only, no remedies (keep simple)
+- Search results show rubrics with remedy count (number of associated remedies)
 - Embed the **translation** (not original) for better semantic matching
-- **Translation guideline (TODO)**: Translations must stick closely to original wording — only add understandability, never remove details. The original terminology is important.
+- **Embeddings DB size**: Currently ~500KB for ~5,900 Mind rubrics. Full repertory (~74,600 rubrics) estimated ~130-150MB with MiniLM-384d — well under Streamlit's 1GB repo limit
 - LLM interface is pluggable (Anthropic or OpenAI)
 - Excel (.xlsx) for data files — easier to inspect, single file per chapter
-- 10 test sentences per rubric (paraphrases) for validating semantic search
+- 10 test sentences per rubric (paraphrases) for validating semantic search — stored separately in `tests/test_sentences.xlsx`
 - Qdrant (local persistent storage in `qdrant_db/`)
 - Switched from ChromaDB to Qdrant due to Python 3.14 compatibility (onnxruntime unavailable)
+
+See `FutureDevs.md` for planned improvements and ideas.
 
 ## Mathpix API Usage
 
