@@ -39,6 +39,25 @@ Key conventions:
 - Time modifiers: "morning", "11 a.m.", "eating, after" = when symptom occurs
 - Subrubrics inherit context from parents
 
+## Critical Patterns (often mistranslated)
+
+**"ailments after X"** = symptoms/illness CAUSED BY the event X
+- "anger, ailments after anger" = health problems that develop as a consequence of experiencing anger
+- NOT "tendency to be angry" — it's about what happens AFTER the anger
+
+**"speech, answers, ..."** = specifically about HOW the person answers questions
+- "speech, answers, monosyllable" = answers questions with single words
+- "speech, answers, stupor returns quickly, after" = after answering, returns to stupor
+- Always preserve the "answering questions" context
+
+**Archaic word order** — read carefully, don't assume modern grammar
+- "stabbed, so that he could have, any one" = anger so intense he could have stabbed anyone
+- NOT "feels like being stabbed"
+
+**", after" suffix** = indicates what happens AFTER the preceding event
+- "stupor returns quickly, after" = stupor returns quickly after (answering)
+- NOT "recovery from stupor"
+
 ## Translation Guidelines
 - Preserve the original meaning exactly — only add clarity, never remove details
 - Keep important terminology (e.g., specific fears, delusions, behaviors)

@@ -17,9 +17,18 @@ Heuristics added to translation prompt in `scripts/translate_rubrics.py`:
 - Abbreviations: agg. (worse from), amel. (better from)
 - Time/condition modifiers
 - Subrubrics inherit parent context
+- "ailments after X" = symptoms CAUSED BY event X (not tendency toward X)
+- "speech, answers, ..." = specifically about answering questions
+- Archaic word order warnings (e.g., "stabbed, so that he could have")
+- ", after" suffix = what happens AFTER preceding event
 
-### Translation Validation
-Backwards check — verify translation quality by comparing back to original.
+### Translation Validation ✓
+LLM judge script `scripts/judge_translations.py` scores translations on:
+- Detail preservation (1-5)
+- Accuracy (1-5)
+- Clarity (1-5)
+
+Run: `python scripts/judge_translations.py` on cost comparison results.
 
 ### Translation Confidence Scores
 LLM translator should return confidence score — some rubrics are ambiguous or hard to interpret; flag low-confidence translations for review.
