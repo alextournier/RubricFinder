@@ -28,14 +28,15 @@ def parse_copy_block(lines: list[str], columns: list[str]) -> list[dict]:
     return rows
 
 
-def extract_tables(sql_path: Path) -> tuple[list[dict], list[dict]]:
-    """Extract RUBRIC and INFO tables from SQL dump."""
+def extract_tables(sql_path: Path) -> tuple[list[dict], list[dict], list[dict]]:
+    """Extract RUBRIC, INFO, and RUBRICREMEDY tables from SQL dump."""
 
     # Regex to match COPY statements (handles public.tablename format)
     copy_pattern = re.compile(r"^COPY\s+(?:public\.)?(\w+)\s*\(([^)]+)\)")
 
     rubrics = []
     info = []
+    rubricremedy = []
 
     opener = gzip.open if str(sql_path).endswith(".gz") else open
 
@@ -59,11 +60,28 @@ def extract_tables(sql_path: Path) -> tuple[list[dict], list[dict]]:
                 elif table_name == "info":
                     info = parse_copy_block(block_lines, columns)
                     print(f"Found INFO table: {len(info)} rows")
+                elif table_name == "rubricremedy":
+                    rubricremedy = parse_copy_block(block_lines, columns)
+                    print(f"Found RUBRICREMEDY table: {len(rubricremedy)} rows, columns: {columns}")
 
-    return rubrics, info
+    return rubrics, info, rubricremedy
 
 
-def build_dataframe(rubrics: list[dict], info: list[dict], repertory: str) -> pd.DataFrame:
+def count_remedies_per_rubric(rubricremedy: list[dict]) -> dict[str, int]:
+    """Count distinct remedies per rubric_id."""
+    from collections import defaultdict
+
+    remedy_counts = defaultdict(set)
+    for row in rubricremedy:
+        rubric_id = row.get("rubricid")
+        remedy_id = row.get("remedyid")
+        if rubric_id and remedy_id:
+            remedy_counts[rubric_id].add(remedy_id)
+
+    return {rubric_id: len(remedies) for rubric_id, remedies in remedy_counts.items()}
+
+
+def build_dataframe(rubrics: list[dict], info: list[dict], rubricremedy: list[dict], repertory: str) -> pd.DataFrame:
     """Build DataFrame filtering to specified repertory and deriving chapter from fullpath."""
 
     # Build DataFrame
@@ -86,6 +104,11 @@ def build_dataframe(rubrics: list[dict], info: list[dict], repertory: str) -> pd
 
     df["chapter"] = df["fullpath"].apply(extract_chapter)
 
+    # Add remedy counts
+    remedy_counts = count_remedies_per_rubric(rubricremedy)
+    df["remedy_count"] = df["id"].map(remedy_counts).fillna(0).astype(int)
+    print(f"Added remedy counts (rubrics with remedies: {(df['remedy_count'] > 0).sum():,})")
+
     # Rename columns to be clearer
     column_mapping = {
         "id": "id",
@@ -100,7 +123,7 @@ def build_dataframe(rubrics: list[dict], info: list[dict], repertory: str) -> pd
     df = df.rename(columns={k: v for k, v in column_mapping.items() if k in df.columns})
 
     # Select and order columns
-    output_columns = ["id", "fullpath", "chapter"]
+    output_columns = ["id", "fullpath", "chapter", "remedy_count"]
     available = [c for c in output_columns if c in df.columns]
     df = df[available]
 
@@ -115,14 +138,14 @@ def main():
         return
 
     print(f"Parsing {sql_path}...")
-    rubrics, info = extract_tables(sql_path)
+    rubrics, info, rubricremedy = extract_tables(sql_path)
 
     if not rubrics:
         print("Error: No rubrics found in dump!")
         return
 
     print(f"\nBuilding DataFrame...")
-    df = build_dataframe(rubrics, info, REPERTORY)
+    df = build_dataframe(rubrics, info, rubricremedy, REPERTORY)
 
     if df.empty:
         print(f"Error: No rubrics found for repertory '{REPERTORY}'")

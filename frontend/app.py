@@ -44,6 +44,7 @@ if query:
         df = pd.DataFrame([
             {
                 "Score": f"{r['score']:.3f}",
+                "Remedies": r.get('remedy_count', 0),
                 "Chapter": r['chapter'],
                 "Path": r['path'],
                 "Translation": r['translation'],

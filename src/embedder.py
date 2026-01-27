@@ -14,6 +14,7 @@ class RubricData(TypedDict):
     path: str
     translation: str
     chapter: str
+    remedy_count: int
 
 
 class RubricEmbedder:
@@ -78,7 +79,8 @@ class RubricEmbedder:
                         "rubric_id": r["id"],
                         "path": r["path"],
                         "translation": r["translation"],
-                        "chapter": r["chapter"]
+                        "chapter": r["chapter"],
+                        "remedy_count": r.get("remedy_count", 0)
                     }
                 )
                 for r, embedding in zip(batch, embeddings)
@@ -117,6 +119,7 @@ class RubricEmbedder:
                 "path": hit.payload["path"],
                 "translation": hit.payload["translation"],
                 "chapter": hit.payload["chapter"],
+                "remedy_count": hit.payload.get("remedy_count", 0),
                 "score": round(hit.score, 4)
             }
             for hit in results.points

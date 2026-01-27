@@ -28,7 +28,8 @@ def load_rubrics_with_translations(excel_path: Path) -> list[RubricData]:
             "id": str(row["id"]),
             "path": str(row["path"]),
             "translation": str(row["translation"]),
-            "chapter": str(row["chapter"])
+            "chapter": str(row["chapter"]),
+            "remedy_count": int(row.get("remedy_count", 0)) if pd.notna(row.get("remedy_count")) else 0
         })
 
     return rubrics
