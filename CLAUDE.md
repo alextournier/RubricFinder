@@ -14,7 +14,7 @@ OOREP SQL dump → Extract rubrics → LLM translation → Embed in Qdrant → S
 
 Key components:
 - **Data extraction**: Parse `oorep.sql.gz` to extract rubrics and remedy counts (starting with Mind chapter)
-- **Translation pipeline**: LLM-agnostic interface for converting archaic → modern English
+- **Translation pipeline**: LLM-agnostic interface for converting archaic → modern English. Prompt includes rubric format heuristics (hierarchy parsing, abbreviations like agg./amel., "of" suffix convention)
 - **Vector storage**: Qdrant (local persistent) with sentence-transformers embeddings (`all-MiniLM-L6-v2`)
 - **Frontend**: Streamlit app (`frontend/app.py`) with direct embedder integration (no separate API needed)
 - **API**: FastAPI `/search` endpoint (optional, for programmatic access)

@@ -18,15 +18,32 @@ MODEL = "claude-3-haiku-20240307"
 
 
 def get_translation_prompt(rubric_path: str) -> str:
-    return f"""You are translating homeopathic rubric descriptions from archaic medical terminology to clear modern English.
+    return f"""You are translating homeopathic repertory rubrics to clear modern English.
+
+## Rubric Format Rules
+Rubrics use comma-separated hierarchical paths from general to specific:
+- "Mind, fear, dark" = fear of the dark
+- "Mind, anxiety, menses, during" = anxiety occurring during menstruation
+
+Key conventions:
+- "of" suffix refers back to parent: "Mind, fear, death, of" = fear OF death
+- "agg." = aggravation (symptom is worse from this)
+- "amel." = amelioration (symptom is better from this)
+- Time modifiers: "morning", "11 a.m.", "eating, after" = when symptom occurs
+- Subrubrics inherit context from parents
+
+## Translation Guidelines
+- Preserve the original meaning exactly — only add clarity, never remove details
+- Keep important terminology (e.g., specific fears, delusions, behaviors)
+- Write a direct phrase describing the mental state, NOT "This rubric indicates..." or "The patient..."
 
 Rubric: {rubric_path}
 
 Provide:
-1. A direct, concise translation (1 short sentence or phrase). Do NOT start with "This rubric indicates...", "The patient...", or similar preambles. Just describe the mental state or tendency directly.
+1. A concise translation (short phrase). Examples:
    Good: "a tendency to start fires" or "fear of being alone"
    Bad: "This rubric indicates a person who..." or "The patient experiences..."
-2. Ten different ways a patient might describe this symptom in everyday language (short phrases)
+2. Ten different ways a patient might describe this symptom in everyday language
 
 Format your response exactly like this:
 TRANSLATION: [your translation]

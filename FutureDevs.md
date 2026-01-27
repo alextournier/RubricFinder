@@ -10,8 +10,13 @@ Translations must stick closely to original wording — only add understandabili
 ### Multiple Translation Versions
 Could generate alternate translations using different expressions and synonyms to improve recall.
 
-### Rubric Format Interpretation
-Translator needs heuristics for parsing rubric structure before translating — nested paths, implicit context from parent rubrics, abbreviations, punctuation conventions.
+### Rubric Format Interpretation ✓
+Heuristics added to translation prompt in `scripts/translate_rubrics.py`:
+- Comma-separated hierarchy (general → specific)
+- "of" suffix refers back to parent rubric
+- Abbreviations: agg. (worse from), amel. (better from)
+- Time/condition modifiers
+- Subrubrics inherit parent context
 
 ### Translation Validation
 Backwards check — verify translation quality by comparing back to original.
@@ -37,5 +42,5 @@ Benchmark different models (MiniLM vs mpnet vs e5-large vs OpenAI) using test se
 
 ## Data & Display
 
-### Remedy Count
-Check if OOREP data includes number of remedies per rubric — could display in search results as relevance indicator.
+### Remedy Count ✓
+Search results now display remedy count (number of associated remedies per rubric). Extracted from OOREP data during rubric extraction.
