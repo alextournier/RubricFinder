@@ -1,5 +1,7 @@
 """Streamlit frontend for RubricFinder semantic search."""
 
+import time
+
 import streamlit as st
 import sys
 from pathlib import Path
@@ -34,11 +36,14 @@ if rubric_count == 0:
 query = st.text_input("Describe the symptom in modern language...", placeholder="e.g., fear of being alone")
 
 if query:
+    start_time = time.time()
     results = embedder.search(query, top_k=10)
+    elapsed = time.time() - start_time
 
     if not results:
         st.info("No results found.")
     else:
+        st.caption(f"Found {len(results)} results in {elapsed:.3f}s")
         import pandas as pd
 
         df = pd.DataFrame([
