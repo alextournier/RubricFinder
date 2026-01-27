@@ -60,7 +60,7 @@ python scripts/compare_embeddings.py
 
 - `data/oorep.sql.gz` - Source PostgreSQL dump from OOREP
 - `data/rubrics.xlsx` - All chapters extracted (reference)
-- `data/mind_rubrics.xlsx` - Mind chapter with columns: id, path, chapter, remedy_count, translation
+- `data/mind_rubrics.xlsx` - Mind chapter (5,930 rubrics) with columns: id, path, chapter, remedy_count, translation
 - `tests/test_sentences.xlsx` - Test sentences for semantic search validation (120 rubrics × 10 sentences each)
 
 Excel format chosen for easier manual inspection and smaller file size.
@@ -78,7 +78,7 @@ Excel format chosen for easier manual inspection and smaller file size.
 
 - Search results show rubrics with remedy count (number of associated remedies)
 - Embed the **translation** (not original) for better semantic matching — validated by A/B test showing 39% MRR improvement (0.55 vs 0.40) over embedding original paths
-- **Embeddings DB size**: Currently ~500KB for ~5,900 Mind rubrics. Full repertory (~74,600 rubrics) estimated ~130-150MB with MiniLM-384d — well under Streamlit's 1GB repo limit
+- **Embeddings DB size**: ~27MB for 5,930 Mind rubrics. Full repertory (~74,600 rubrics) estimated ~130MB with MiniLM-384d — well under Streamlit's 1GB repo limit
 - LLM interface is pluggable (Anthropic or OpenAI)
 - Excel (.xlsx) for data files — easier to inspect, single file per chapter
 - 10 test sentences per rubric (short paraphrases) for validating semantic search — stored in `tests/test_sentences.xlsx`
