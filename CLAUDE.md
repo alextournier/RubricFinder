@@ -51,6 +51,9 @@ python scripts/generate_test_sentences.py
 
 # Evaluate semantic search quality
 python scripts/evaluate_search.py --excel ../tests/test_sentences.xlsx
+
+# Compare embedding strategies (translation vs original paths)
+python scripts/compare_embeddings.py
 ```
 
 ## Data Files
@@ -74,7 +77,7 @@ Excel format chosen for easier manual inspection and smaller file size.
 ## Key Design Decisions
 
 - Search results show rubrics with remedy count (number of associated remedies)
-- Embed the **translation** (not original) for better semantic matching
+- Embed the **translation** (not original) for better semantic matching — validated by A/B test showing 39% MRR improvement (0.55 vs 0.40) over embedding original paths
 - **Embeddings DB size**: Currently ~500KB for ~5,900 Mind rubrics. Full repertory (~74,600 rubrics) estimated ~130-150MB with MiniLM-384d — well under Streamlit's 1GB repo limit
 - LLM interface is pluggable (Anthropic or OpenAI)
 - Excel (.xlsx) for data files — easier to inspect, single file per chapter

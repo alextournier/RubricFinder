@@ -20,14 +20,21 @@ class RubricData(TypedDict):
 class RubricEmbedder:
     """Manages rubric embeddings in Qdrant."""
 
-    COLLECTION_NAME = "rubrics"
+    DEFAULT_COLLECTION = "rubrics"
     MODEL_NAME = "all-MiniLM-L6-v2"  # 384 dims, ~80MB, good quality/size balance
     VECTOR_SIZE = 384
     BATCH_SIZE = 500
 
-    def __init__(self, persist_dir: str | Path = "qdrant_db"):
-        """Initialize Qdrant client with persistent storage."""
+    def __init__(self, persist_dir: str | Path = "qdrant_db", collection_name: str | None = None):
+        """
+        Initialize Qdrant client with persistent storage.
+
+        Args:
+            persist_dir: Directory for Qdrant persistent storage
+            collection_name: Name of collection to use (default: "rubrics")
+        """
         self.persist_dir = Path(persist_dir)
+        self.collection_name = collection_name or self.DEFAULT_COLLECTION
         self.client = QdrantClient(path=str(self.persist_dir))
 
         # Load sentence-transformers model
@@ -35,22 +42,28 @@ class RubricEmbedder:
 
         # Create collection if it doesn't exist
         collections = self.client.get_collections().collections
-        if not any(c.name == self.COLLECTION_NAME for c in collections):
+        if not any(c.name == self.collection_name for c in collections):
             self.client.create_collection(
-                collection_name=self.COLLECTION_NAME,
+                collection_name=self.collection_name,
                 vectors_config=VectorParams(
                     size=self.VECTOR_SIZE,
                     distance=Distance.COSINE
                 )
             )
 
-    def add_rubrics(self, rubrics: list[RubricData], skip_existing: bool = True) -> int:
+    def add_rubrics(
+        self,
+        rubrics: list[RubricData],
+        skip_existing: bool = True,
+        text_field: str = "translation"
+    ) -> int:
         """
         Add rubrics to the collection.
 
         Args:
             rubrics: List of rubric data dicts with id, path, translation, chapter
             skip_existing: If True, skip rubrics already in collection
+            text_field: Which field to embed ("translation" or "path")
 
         Returns:
             Number of rubrics added
@@ -66,8 +79,8 @@ class RubricEmbedder:
         for i in range(0, len(rubrics), self.BATCH_SIZE):
             batch = rubrics[i:i + self.BATCH_SIZE]
 
-            # Generate embeddings
-            texts = [r["translation"] for r in batch]
+            # Generate embeddings from specified field
+            texts = [r[text_field] for r in batch]
             embeddings = self.model.encode(texts, show_progress_bar=len(batch) > 100)
 
             # Create points
@@ -87,7 +100,7 @@ class RubricEmbedder:
             ]
 
             self.client.upsert(
-                collection_name=self.COLLECTION_NAME,
+                collection_name=self.collection_name,
                 points=points
             )
             added += len(batch)
@@ -108,7 +121,7 @@ class RubricEmbedder:
         query_embedding = self.model.encode(query).tolist()
 
         results = self.client.query_points(
-            collection_name=self.COLLECTION_NAME,
+            collection_name=self.collection_name,
             query=query_embedding,
             limit=min(top_k, max(1, self.count()))
         )
@@ -136,7 +149,7 @@ class RubricEmbedder:
         offset = None
         while True:
             result, offset = self.client.scroll(
-                collection_name=self.COLLECTION_NAME,
+                collection_name=self.collection_name,
                 limit=1000,
                 offset=offset,
                 with_payload=["rubric_id"]
@@ -149,14 +162,14 @@ class RubricEmbedder:
 
     def count(self) -> int:
         """Return number of rubrics in collection."""
-        info = self.client.get_collection(self.COLLECTION_NAME)
+        info = self.client.get_collection(self.collection_name)
         return info.points_count
 
     def clear(self) -> None:
         """Delete all rubrics from collection."""
-        self.client.delete_collection(self.COLLECTION_NAME)
+        self.client.delete_collection(self.collection_name)
         self.client.create_collection(
-            collection_name=self.COLLECTION_NAME,
+            collection_name=self.collection_name,
             vectors_config=VectorParams(
                 size=self.VECTOR_SIZE,
                 distance=Distance.COSINE
