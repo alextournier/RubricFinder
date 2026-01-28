@@ -36,9 +36,10 @@ def load_rubrics_with_translations(excel_path: Path) -> list[RubricData]:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Embed translated rubrics into ChromaDB")
+    parser = argparse.ArgumentParser(description="Embed translated rubrics into Qdrant")
     parser.add_argument("--force", action="store_true", help="Clear existing embeddings and re-embed all")
-    parser.add_argument("--excel", default="mind_rubrics.xlsx", help="Excel file name in data/ directory")
+    parser.add_argument("--excel", default="synthesis_mind_rubrics.xlsx", help="Excel file name in data/ directory")
+    parser.add_argument("--collection", default="rubrics", help="Qdrant collection name")
     args = parser.parse_args()
 
     excel_path = DATA_DIR / args.excel
@@ -54,8 +55,8 @@ def main():
         print("No rubrics with translations found. Run translate_rubrics.py first.")
         return 1
 
-    print("Initializing embedder (loading model)...")
-    embedder = RubricEmbedder()
+    print(f"Initializing embedder (collection: {args.collection})...")
+    embedder = RubricEmbedder(collection_name=args.collection)
 
     if args.force:
         print("Clearing existing embeddings...")

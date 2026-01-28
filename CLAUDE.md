@@ -4,16 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RubricFinder is a semantic search webapp for homeopathic rubrics. It extracts rubrics from the OOREP PostgreSQL dump, translates archaic rubric language to modern English using LLMs, embeds translations in Qdrant, and provides search via a web interface.
+RubricFinder is a semantic search webapp for homeopathic rubrics. It uses Synthesis repertory data, translates rubric language to modern English using LLMs, embeds translations in Qdrant, and provides search via a web interface.
 
 ## Architecture
 
 ```
-OOREP SQL dump → Extract rubrics → LLM translation → Embed in Qdrant → Streamlit frontend
+Synthesis text file → Extract rubrics → LLM translation → Embed in Qdrant → Streamlit frontend
 ```
 
 Key components:
-- **Data extraction**: Parse `oorep.sql.gz` to extract rubrics and remedy counts (starting with Mind chapter)
+- **Data extraction**: Parse Synthesis text files to extract rubrics (Mind chapter: 19,927 rubrics)
 - **Translation pipeline**: LLM-agnostic interface for converting archaic → modern English. Prompt includes rubric format heuristics (hierarchy parsing, abbreviations like agg./amel., "of" suffix convention)
 - **Vector storage**: Qdrant (local persistent) with sentence-transformers embeddings (`all-MiniLM-L6-v2`)
 - **Frontend**: Streamlit app (`frontend/app.py`) with direct embedder integration (no separate API needed)
@@ -25,7 +25,10 @@ Key components:
 # Install dependencies
 pip install -r requirements.txt
 
-# Run extraction script
+# Run extraction script (Synthesis)
+python scripts/extract_synthesis.py
+
+# Run extraction script (legacy OOREP)
 python scripts/extract_rubrics.py
 
 # Run translation pipeline (parallel by default, ~10x faster)
@@ -58,12 +61,15 @@ python scripts/compare_embeddings.py
 
 ## Data Files
 
-- `data/oorep.sql.gz` - Source PostgreSQL dump from OOREP
-- `data/rubrics.xlsx` - All chapters extracted (reference)
-- `data/mind_rubrics.xlsx` - Mind chapter (5,930 rubrics) with columns: id, path, chapter, remedy_count, translation
+- `data/MIND_only_book188_Synthesys.txt` - Source Synthesis repertory (Mind chapter)
+- `data/synthesis_mind_rubrics.xlsx` - Mind chapter (19,927 rubrics) with columns: id, path, chapter, translation
+- `data/oorep.sql.gz` - Legacy OOREP PostgreSQL dump (5,930 Mind rubrics, has remedy counts)
+- `data/mind_rubrics.xlsx` - Legacy OOREP Mind chapter with translations
 - `tests/test_sentences.xlsx` - Test sentences for semantic search validation (120 rubrics × 10 sentences each)
 
 Excel format chosen for easier manual inspection and smaller file size.
+
+**Note:** Synthesis data does not include remedy counts. These could be cross-referenced from OOREP in the future.
 
 ## Deployment
 
@@ -76,9 +82,10 @@ Excel format chosen for easier manual inspection and smaller file size.
 
 ## Key Design Decisions
 
-- Search results show rubrics with remedy count (number of associated remedies)
+- **Synthesis repertory** used as primary data source (19,927 Mind rubrics vs 5,930 in OOREP)
+- Remedy counts not yet available for Synthesis (column shows 0, placeholder for future)
 - Embed the **translation** (not original) for better semantic matching — validated by A/B test showing 39% MRR improvement (0.55 vs 0.40) over embedding original paths
-- **Embeddings DB size**: ~27MB for 5,930 Mind rubrics. Full repertory (~74,600 rubrics) estimated ~130MB with MiniLM-384d — well under Streamlit's 1GB repo limit
+- **Embeddings DB size**: ~90MB estimated for full Synthesis Mind chapter — well under Streamlit's 1GB repo limit
 - LLM interface is pluggable (Anthropic or OpenAI)
 - Excel (.xlsx) for data files — easier to inspect, single file per chapter
 - 10 test sentences per rubric (short paraphrases) for validating semantic search — stored in `tests/test_sentences.xlsx`

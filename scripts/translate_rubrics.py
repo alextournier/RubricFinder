@@ -15,19 +15,19 @@ from tqdm import tqdm
 from tqdm.asyncio import tqdm as async_tqdm
 
 # Config
-INPUT_FILE = "data/mind_rubrics.xlsx"
+INPUT_FILE = "data/synthesis_mind_rubrics.xlsx"  # Default to Synthesis
 BATCH_SIZE = 20  # Save after this many translations
 CONCURRENT_REQUESTS = 10  # Max parallel API calls (conservative for rate limits)
 MODEL = "gpt-4o-mini"  # Testing model (claude-sonnet-4-20250514 for production)
 
 
-def get_translation_prompt(rubric_path: str) -> str:
-    return f"""You are translating homeopathic repertory rubrics to clear modern English.
+def get_translation_prompt(rubric_path: str, include_tests: bool = False) -> str:
+    base_prompt = f"""You are translating homeopathic repertory rubrics to clear modern English.
 
 ## Rubric Format Rules
-Rubrics use comma-separated hierarchical paths from general to specific:
-- "Mind, fear, dark" = fear of the dark
-- "Mind, anxiety, menses, during" = anxiety occurring during menstruation
+Rubrics use hierarchical paths from general to specific, separated by " - ":
+- "MIND - FEAR - dark" = fear of the dark
+- "MIND - ANXIETY - menses; during" = anxiety occurring during menstruation
 
 Key conventions:
 - "of" suffix refers back to parent: "Mind, fear, death, of" = fear OF death
@@ -62,14 +62,16 @@ Key conventions:
 
 Rubric: {rubric_path}
 
-Provide:
-1. A concise translation (short phrase). Examples:
+Provide a concise translation (short phrase). Examples:
    Good: "a tendency to start fires" or "fear of being alone"
    Bad: "This rubric indicates a person who..." or "The patient experiences..."
-2. Ten different ways a patient might describe this symptom in everyday language
 
-Format your response exactly like this:
-TRANSLATION: [your translation]
+Format: TRANSLATION: [your translation]"""
+
+    if include_tests:
+        base_prompt += """
+
+Also provide ten different ways a patient might describe this symptom in everyday language:
 TEST_1: [first patient description]
 TEST_2: [second patient description]
 TEST_3: [third patient description]
@@ -80,6 +82,8 @@ TEST_7: [seventh patient description]
 TEST_8: [eighth patient description]
 TEST_9: [ninth patient description]
 TEST_10: [tenth patient description]"""
+
+    return base_prompt
 
 
 def parse_response(response_text: str) -> dict:
@@ -111,15 +115,15 @@ def translate_rubric(client: OpenAI, rubric_path: str) -> dict:
 
 
 async def translate_rubric_async(
-    client: AsyncOpenAI, semaphore: asyncio.Semaphore, rubric_path: str, idx: int
+    client: AsyncOpenAI, semaphore: asyncio.Semaphore, rubric_path: str, idx: int, include_tests: bool = False
 ) -> tuple[int, dict | Exception]:
     """Call LLM to translate a single rubric (async version with rate limiting)."""
     async with semaphore:
         try:
             response = await client.chat.completions.create(
                 model=MODEL,
-                max_tokens=500,
-                messages=[{"role": "user", "content": get_translation_prompt(rubric_path)}]
+                max_tokens=150 if not include_tests else 500,
+                messages=[{"role": "user", "content": get_translation_prompt(rubric_path, include_tests)}]
             )
             return idx, parse_response(response.choices[0].message.content)
         except Exception as e:
@@ -130,16 +134,17 @@ async def translate_batch_async(
     client: AsyncOpenAI,
     semaphore: asyncio.Semaphore,
     rubrics: list[tuple[int, str]],
+    include_tests: bool = False,
 ) -> list[tuple[int, dict | Exception]]:
     """Translate a batch of rubrics concurrently."""
     tasks = [
-        translate_rubric_async(client, semaphore, path, idx)
+        translate_rubric_async(client, semaphore, path, idx, include_tests)
         for idx, path in rubrics
     ]
     return await asyncio.gather(*tasks)
 
 
-async def main_async(limit: int = None, concurrency: int = CONCURRENT_REQUESTS):
+async def main_async(limit: int = None, concurrency: int = CONCURRENT_REQUESTS, input_file: str = INPUT_FILE):
     """Async main function for parallel translation."""
     # Check API key
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -151,8 +156,15 @@ async def main_async(limit: int = None, concurrency: int = CONCURRENT_REQUESTS):
     semaphore = asyncio.Semaphore(concurrency)
 
     # Load data
-    df = pd.read_excel(INPUT_FILE)
-    print(f"Loaded {len(df)} rubrics from {INPUT_FILE}")
+    df = pd.read_excel(input_file)
+    print(f"Loaded {len(df)} rubrics from {input_file}")
+
+    # Initialize translation columns if missing
+    if "translation" not in df.columns:
+        df["translation"] = ""
+        for i in range(1, 11):
+            df[f"test_{i}"] = ""
+        print("Initialized translation columns")
 
     # Find rows needing translation (empty translation column)
     needs_translation = df[df["translation"].isna() | (df["translation"] == "")]
@@ -178,7 +190,7 @@ async def main_async(limit: int = None, concurrency: int = CONCURRENT_REQUESTS):
 
     for batch_start in range(0, len(work_items), BATCH_SIZE):
         batch = work_items[batch_start : batch_start + BATCH_SIZE]
-        results = await translate_batch_async(client, semaphore, batch)
+        results = await translate_batch_async(client, semaphore, batch, include_tests=False)
 
         for idx, result in results:
             if isinstance(result, Exception):
@@ -186,16 +198,14 @@ async def main_async(limit: int = None, concurrency: int = CONCURRENT_REQUESTS):
                 errors += 1
             else:
                 df.at[idx, "translation"] = result["translation"]
-                for i in range(1, 11):
-                    df.at[idx, f"test_{i}"] = result[f"test_{i}"]
                 translated += 1
             pbar.update(1)
 
         # Save after each batch
-        df.to_excel(INPUT_FILE, index=False)
+        df.to_excel(input_file, index=False)
 
     pbar.close()
-    print(f"\nDone! Translated {translated} rubrics ({errors} errors). Saved to {INPUT_FILE}")
+    print(f"\nDone! Translated {translated} rubrics ({errors} errors). Saved to {input_file}")
 
 
 def main(limit: int = None):
@@ -261,7 +271,14 @@ if __name__ == "__main__":
         "--concurrency", "-c", type=int, default=CONCURRENT_REQUESTS,
         help=f"Number of concurrent requests (default: {CONCURRENT_REQUESTS})"
     )
+    parser.add_argument(
+        "--input", "-i", type=str, default=INPUT_FILE,
+        help=f"Input Excel file (default: {INPUT_FILE})"
+    )
     args = parser.parse_args()
+
+    # Override global INPUT_FILE if specified
+    INPUT_FILE = args.input
 
     if args.sync:
         main(args.limit)
