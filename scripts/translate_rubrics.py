@@ -115,19 +115,34 @@ def translate_rubric(client: OpenAI, rubric_path: str) -> dict:
 
 
 async def translate_rubric_async(
-    client: AsyncOpenAI, semaphore: asyncio.Semaphore, rubric_path: str, idx: int, include_tests: bool = False
+    client: AsyncOpenAI, semaphore: asyncio.Semaphore, rubric_path: str, idx: int, include_tests: bool = False,
+    rate_limit_delay: float = 60.0
 ) -> tuple[int, dict | Exception]:
-    """Call LLM to translate a single rubric (async version with rate limiting)."""
+    """Call LLM to translate a single rubric (async version with rate limiting and retry)."""
     async with semaphore:
-        try:
-            response = await client.chat.completions.create(
-                model=MODEL,
-                max_tokens=150 if not include_tests else 500,
-                messages=[{"role": "user", "content": get_translation_prompt(rubric_path, include_tests)}]
-            )
-            return idx, parse_response(response.choices[0].message.content)
-        except Exception as e:
-            return idx, e
+        while True:
+            try:
+                response = await client.chat.completions.create(
+                    model=MODEL,
+                    max_tokens=150 if not include_tests else 500,
+                    messages=[{"role": "user", "content": get_translation_prompt(rubric_path, include_tests)}]
+                )
+                return idx, parse_response(response.choices[0].message.content)
+            except Exception as e:
+                error_str = str(e)
+                # Retry on rate limit (429) - wait for sliding quota to free up
+                if "429" in error_str or "rate limit" in error_str.lower():
+                    from tqdm import tqdm
+                    tqdm.write(f"Rate limited, waiting {rate_limit_delay}s...")
+                    await asyncio.sleep(rate_limit_delay)
+                    continue
+                # Retry on server errors (5xx)
+                elif "500" in error_str or "502" in error_str or "503" in error_str:
+                    await asyncio.sleep(5)
+                    continue
+                else:
+                    # Non-retryable error
+                    return idx, e
 
 
 async def translate_batch_async(

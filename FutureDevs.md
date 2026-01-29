@@ -38,6 +38,19 @@ Benchmark translation costs across different LLMs (Claude Haiku vs Sonnet, GPT-4
 
 Script: `scripts/compare_llm_costs.py` — run with `--sample N` to test on N rubrics. Results in `tests/translation_cost_comparison.xlsx`.
 
+### API Rate Limits (Production Consideration)
+
+OpenAI gpt-4o-mini has a **10,000 requests/day** limit on basic tiers. Translating 20K rubrics hit this limit multiple times.
+
+**Mitigation strategies for production:**
+- **Upgrade OpenAI tier** — Higher spending tiers get higher rate limits
+- **Use OpenAI Batch API** — 50% cheaper, higher limits, but async (24h turnaround)
+- **Multi-provider fallback** — Switch to Claude API when OpenAI quota exhausted
+- **Pre-compute all translations** — Run translation offline, store results; no runtime API calls needed
+- **Add retry with exponential backoff** — Handle transient 429 errors gracefully
+
+**Current script behavior:** On 429 rate limit, waits 60s and retries indefinitely (sliding quota). On 5xx server errors, retries after 5s. Non-retryable errors are logged and skipped.
+
 ## Search & Embeddings
 
 ### Translation vs Original Comparison
