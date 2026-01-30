@@ -15,7 +15,7 @@ Synthesis text file → Extract rubrics → LLM translation → Embed in Qdrant 
 Key components:
 - **Data extraction**: Parse Synthesis text files to extract rubrics (Mind chapter: 19,927 rubrics)
 - **Translation pipeline**: LLM-agnostic interface for converting archaic → modern English. Prompt includes rubric format heuristics (hierarchy parsing, abbreviations like agg./amel., "of" suffix convention)
-- **Vector storage**: Qdrant (local persistent) with sentence-transformers embeddings (`all-MiniLM-L6-v2`)
+- **Vector storage**: Qdrant (local or cloud) with sentence-transformers embeddings (`paraphrase-multilingual-MiniLM-L12-v2` — supports 50+ languages)
 - **Frontend**: Streamlit app (`frontend/app.py`) with direct embedder integration (no separate API needed)
 - **API**: FastAPI `/search` endpoint (optional, for programmatic access)
 
@@ -91,8 +91,9 @@ Excel format chosen for easier manual inspection and smaller file size.
 - 10 test sentences per rubric (short paraphrases) for validating semantic search — stored in `tests/test_sentences.xlsx`
 - Test sentences should be SHORT (8-10 words max) and semantically close to the translation for best embedding match
 - Current evaluation metrics (120 rubrics, 1200 queries): Hit@1: 44%, Hit@5: 71%, Hit@10: 79%, MRR: 0.55
-- Qdrant (local persistent storage in `qdrant_db/`)
+- Qdrant (local persistent storage in `qdrant_db/`, or cloud via `QDRANT_URL`/`QDRANT_API_KEY`)
 - Switched from ChromaDB to Qdrant due to Python 3.14 compatibility (onnxruntime unavailable)
+- **Multilingual search**: queries can be in any of 50+ languages (French, German, Spanish, etc.) and match English translations
 
 See `FutureDevs.md` for planned improvements and ideas.
 

@@ -22,7 +22,7 @@ class RubricEmbedder:
     """Manages rubric embeddings in Qdrant (local or cloud)."""
 
     DEFAULT_COLLECTION = "rubrics"
-    MODEL_NAME = "all-MiniLM-L6-v2"  # 384 dims, ~80MB, good quality/size balance
+    MODEL_NAME = "paraphrase-multilingual-MiniLM-L12-v2"  # 384 dims, 50+ languages
     VECTOR_SIZE = 384
     BATCH_SIZE = 500
 
