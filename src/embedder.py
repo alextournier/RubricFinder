@@ -1,5 +1,6 @@
 """Qdrant wrapper for rubric embeddings."""
 
+import os
 from pathlib import Path
 from typing import TypedDict
 
@@ -18,29 +19,56 @@ class RubricData(TypedDict):
 
 
 class RubricEmbedder:
-    """Manages rubric embeddings in Qdrant."""
+    """Manages rubric embeddings in Qdrant (local or cloud)."""
 
     DEFAULT_COLLECTION = "rubrics"
     MODEL_NAME = "all-MiniLM-L6-v2"  # 384 dims, ~80MB, good quality/size balance
     VECTOR_SIZE = 384
     BATCH_SIZE = 500
 
-    def __init__(self, persist_dir: str | Path = "qdrant_db", collection_name: str | None = None):
+    def __init__(
+        self,
+        persist_dir: str | Path = "qdrant_db",
+        collection_name: str | None = None,
+        url: str | None = None,
+        api_key: str | None = None,
+    ):
         """
-        Initialize Qdrant client with persistent storage.
+        Initialize Qdrant client.
+
+        For cloud: provide url and api_key, or set QDRANT_URL and QDRANT_API_KEY env vars.
+        For local: omit url/api_key, uses persist_dir for storage.
 
         Args:
-            persist_dir: Directory for Qdrant persistent storage
+            persist_dir: Directory for local Qdrant storage (ignored if using cloud)
             collection_name: Name of collection to use (default: "rubrics")
+            url: Qdrant Cloud URL (or set QDRANT_URL env var)
+            api_key: Qdrant Cloud API key (or set QDRANT_API_KEY env var)
         """
-        self.persist_dir = Path(persist_dir)
         self.collection_name = collection_name or self.DEFAULT_COLLECTION
-        self.client = QdrantClient(path=str(self.persist_dir))
+
+        # Check for cloud config (explicit params or env vars)
+        cloud_url = url or os.environ.get("QDRANT_URL")
+        cloud_key = api_key or os.environ.get("QDRANT_API_KEY")
+
+        if cloud_url and cloud_key:
+            # Cloud mode
+            self.client = QdrantClient(url=cloud_url, api_key=cloud_key)
+            self.mode = "cloud"
+        else:
+            # Local mode
+            self.persist_dir = Path(persist_dir)
+            self.client = QdrantClient(path=str(self.persist_dir))
+            self.mode = "local"
 
         # Load sentence-transformers model
         self.model = SentenceTransformer(self.MODEL_NAME)
 
         # Create collection if it doesn't exist
+        self._ensure_collection()
+
+    def _ensure_collection(self):
+        """Create collection if it doesn't exist."""
         collections = self.client.get_collections().collections
         if not any(c.name == self.collection_name for c in collections):
             self.client.create_collection(
